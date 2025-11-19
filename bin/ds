@@ -8,7 +8,7 @@ const path = require('path');
 const { extract } = require(path.join(__dirname, '../packages/extractor/dist'));
 const { normalize } = require(path.join(__dirname, '../packages/normalizer/dist'));
 const { figma } = require(path.join(__dirname, '../packages/figma-bridge/dist'));
-const { codegen } = require(path.join(__dirname, '../packages/codegen/dist'));
+const { codegen, generateAssetPrompts } = require(path.join(__dirname, '../packages/codegen/dist'));
 
 const program = new Command();
 
@@ -101,6 +101,21 @@ program
       });
     } catch (error) {
       console.error(chalk.red('❌ Code generation failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('assets-prompts')
+  .description('Generate asset recreation prompts from assets.json')
+  .requiredOption('--assets <file>', 'Path to assets.json')
+  .requiredOption('--out <file>', 'Path to write asset-prompts.json')
+  .action(async (opts) => {
+    try {
+      await generateAssetPrompts(opts.assets, opts.out);
+      console.log(chalk.green(`✓ Wrote asset prompts to ${opts.out}`));
+    } catch (err) {
+      console.error(chalk.red('Error generating asset prompts'), err);
       process.exit(1);
     }
   });

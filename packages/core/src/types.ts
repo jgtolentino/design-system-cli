@@ -226,3 +226,22 @@ export interface CodegenOptions {
   framework: CodegenFramework['name'];
   out: string;
 }
+
+export interface AssetPromptEntry {
+  id: string;
+  type: string;
+  target_model: string;
+  prompt: string;
+  negative_prompt: string;
+  guidance: {
+    aspect_ratio?: string;
+    color_palette?: string[];
+    style_notes?: string;
+    role?: string;
+  };
+}
+
+export interface AssetPromptsFile {
+  page: string;
+  items: AssetPromptEntry[];
+}

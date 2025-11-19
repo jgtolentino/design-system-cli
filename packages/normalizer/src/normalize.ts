@@ -196,7 +196,7 @@ function groupColorsIntoScales(colors: Record<string, string>): Record<string, C
 /**
  * Normalize colors from raw tokens
  */
-function normalizeColors(
+export function normalizeColors(
   rawColors: Record<string, string>,
   mapping: TokenMapping
 ): NormalizedDesignTokens['colors'] {

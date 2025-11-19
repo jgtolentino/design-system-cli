@@ -1,0 +1,46 @@
+{
+  "name": "design-system-cli",
+  "version": "1.0.0",
+  "description": "Design System Extraction, Normalization, and Code Generation CLI",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "bin": {
+    "ds": "./bin/ds"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test",
+    "clean": "pnpm -r clean && rm -rf node_modules",
+    "ds": "node bin/ds"
+  },
+  "dependencies": {
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0",
+    "tsx": "^4.7.0",
+    "prettier": "^3.1.0",
+    "eslint": "^8.56.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "keywords": [
+    "design-system",
+    "design-tokens",
+    "figma",
+    "tailwind",
+    "react",
+    "extraction",
+    "code-generation"
+  ],
+  "author": "Jake Tolentino",
+  "license": "MIT"
+}

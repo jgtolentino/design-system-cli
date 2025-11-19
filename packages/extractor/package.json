@@ -1,0 +1,21 @@
+{
+  "name": "@ds-cli/extractor",
+  "version": "1.0.0",
+  "description": "Design system token extractor using Playwright",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ds-cli/core": "workspace:*",
+    "playwright": "^1.40.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}

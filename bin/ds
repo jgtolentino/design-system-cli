@@ -1,0 +1,165 @@
+#!/usr/bin/env node
+
+const { Command } = require('commander');
+const chalk = require('chalk');
+const path = require('path');
+
+// Import from built packages
+const { extract } = require(path.join(__dirname, '../packages/extractor/dist'));
+const { normalize } = require(path.join(__dirname, '../packages/normalizer/dist'));
+const { figma } = require(path.join(__dirname, '../packages/figma-bridge/dist'));
+const { codegen } = require(path.join(__dirname, '../packages/codegen/dist'));
+
+const program = new Command();
+
+program
+  .name('ds')
+  .description('Design System CLI - Extract, normalize, and generate code from design systems')
+  .version('1.0.0');
+
+program
+  .command('extract')
+  .description('Extract design tokens from a website using Playwright')
+  .requiredOption('-u, --url <url>', 'URL to extract from')
+  .option('-o, --out <path>', 'Output JSON file path', './tokens-raw.json')
+  .option('-s, --screenshots <dir>', 'Directory to save screenshots')
+  .option('--viewport <viewport>', 'Viewport size (e.g., "1440x900")', '1440x900')
+  .option('--no-headless', 'Run browser in visible mode')
+  .option('--timeout <ms>', 'Navigation timeout in milliseconds', '60000')
+  .action(async (options) => {
+    try {
+      await extract({
+        url: options.url,
+        out: options.out,
+        screenshots: options.screenshots,
+        viewport: options.viewport,
+        headless: options.headless,
+        timeout: parseInt(options.timeout),
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Extraction failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('normalize')
+  .description('Normalize raw design tokens to house system format')
+  .requiredOption('-i, --input <path>', 'Input raw tokens JSON file')
+  .option('-m, --map <path>', 'Token mapping configuration file', './token-mapping.json')
+  .option('-o, --out <path>', 'Output normalized tokens file', './tokens-normalized.json')
+  .action(async (options) => {
+    try {
+      await normalize({
+        input: options.input,
+        map: options.map,
+        out: options.out,
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Normalization failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('figma')
+  .description('Generate Figma plugin or push tokens via API')
+  .requiredOption('-i, --input <path>', 'Input normalized tokens JSON file')
+  .option('-o, --out <path>', 'Output directory for plugin files', './figma-plugin')
+  .option('--mode <mode>', 'Mode: plugin or push', 'plugin')
+  .option('--file-id <id>', 'Figma file ID (for push mode)')
+  .option('--token <token>', 'Figma access token (for push mode)')
+  .action(async (options) => {
+    try {
+      await figma({
+        input: options.input,
+        out: options.out,
+        mode: options.mode,
+        fileId: options.fileId,
+        token: options.token,
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Figma integration failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('codegen')
+  .description('Generate React, Tailwind, or MUI code from tokens')
+  .requiredOption('-i, --input <path>', 'Input normalized tokens JSON file')
+  .option('-o, --out <path>', 'Output directory for generated code', './design-system')
+  .option('-f, --framework <framework>', 'Framework: react-tailwind, react-mui, vue-tailwind, svelte-tailwind', 'react-tailwind')
+  .action(async (options) => {
+    try {
+      await codegen({
+        input: options.input,
+        out: options.out,
+        framework: options.framework,
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Code generation failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('pipeline')
+  .description('Run the full extraction → normalization → figma → codegen pipeline')
+  .requiredOption('-u, --url <url>', 'URL to extract from')
+  .option('--raw-out <path>', 'Raw tokens output path', './tokens-raw.json')
+  .option('--normalized-out <path>', 'Normalized tokens output path', './tokens-normalized.json')
+  .option('--map <path>', 'Token mapping configuration file', './token-mapping.json')
+  .option('--figma-out <path>', 'Figma plugin output directory', './figma-plugin')
+  .option('--code-out <path>', 'Code generation output directory', './design-system')
+  .option('--framework <framework>', 'Framework for codegen: react-tailwind, react-mui, vue-tailwind, svelte-tailwind', 'react-tailwind')
+  .action(async (options) => {
+    console.log(chalk.bold.cyan('\n🚀 Starting full design system pipeline...\n'));
+
+    try {
+      console.log(chalk.bold('📍 Step 1/4: Extracting design tokens...'));
+      await extract({
+        url: options.url,
+        out: options.rawOut,
+        headless: true,
+      });
+
+      console.log(chalk.bold('\n📍 Step 2/4: Normalizing tokens...'));
+      await normalize({
+        input: options.rawOut,
+        map: options.map,
+        out: options.normalizedOut,
+      });
+
+      console.log(chalk.bold('\n📍 Step 3/4: Generating Figma plugin...'));
+      await figma({
+        input: options.normalizedOut,
+        out: options.figmaOut,
+        mode: 'plugin',
+      });
+
+      console.log(chalk.bold('\n📍 Step 4/4: Generating code...'));
+      await codegen({
+        input: options.normalizedOut,
+        out: options.codeOut,
+        framework: options.framework,
+      });
+
+      console.log(chalk.bold.green('\n✅ Pipeline complete!\n'));
+      console.log(chalk.cyan('📦 Output files:'));
+      console.log(`   Raw tokens: ${options.rawOut}`);
+      console.log(`   Normalized tokens: ${options.normalizedOut}`);
+      console.log(`   Figma plugin: ${options.figmaOut}/`);
+      console.log(`   Generated code: ${options.codeOut}/`);
+    } catch (error) {
+      console.error(chalk.red('\n❌ Pipeline failed:'), error.message);
+      console.error(error.stack);
+      process.exit(1);
+    }
+  });
+
+program.parse(process.argv);
+
+if (!process.argv.slice(2).length) {
+  program.outputHelp();
+}

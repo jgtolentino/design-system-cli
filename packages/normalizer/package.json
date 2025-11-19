@@ -1,0 +1,20 @@
+{
+  "name": "@ds-cli/normalizer",
+  "version": "1.0.0",
+  "description": "Design system token normalizer - maps raw tokens to house system",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@ds-cli/core": "workspace:*",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.0"
+  }
+}

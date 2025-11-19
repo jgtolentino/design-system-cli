@@ -16,6 +16,108 @@ import {
 } from '@ds-cli/core';
 
 /**
+ * Convert RGB to HSL for color family detection
+ */
+function rgbToHsl(r: number, g: number, b: number): { h: number; s: number; l: number } {
+  r /= 255;
+  g /= 255;
+  b /= 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+
+  return { h: h * 360, s: s * 100, l: l * 100 };
+}
+
+/**
+ * Generate semantic color name from RGB value
+ */
+function generateSemanticColorName(rgbValue: string): string {
+  // Parse RGB value (handles formats: "rgb(r, g, b)", "#rrggbb", etc.)
+  const rgbMatch = rgbValue.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+  if (!rgbMatch) {
+    // If not a valid RGB format, return sanitized version of original
+    return rgbValue.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+  }
+
+  const r = parseInt(rgbMatch[1]);
+  const g = parseInt(rgbMatch[2]);
+  const b = parseInt(rgbMatch[3]);
+
+  // Convert to HSL for color family detection
+  const { h, s, l } = rgbToHsl(r, g, b);
+
+  // Handle achromatic colors (grays, blacks, whites)
+  if (s < 10) {
+    if (l < 10) return 'black';
+    if (l > 90) return 'white';
+    if (l < 25) return 'gray-900';
+    if (l < 40) return 'gray-700';
+    if (l < 60) return 'gray-500';
+    if (l < 75) return 'gray-300';
+    return 'gray-100';
+  }
+
+  // Determine color family from hue
+  let colorName = '';
+
+  if (h >= 345 || h < 15) {
+    colorName = 'red';
+  } else if (h >= 15 && h < 45) {
+    colorName = 'orange';
+  } else if (h >= 45 && h < 75) {
+    colorName = 'yellow';
+  } else if (h >= 75 && h < 165) {
+    colorName = 'green';
+  } else if (h >= 165 && h < 195) {
+    colorName = 'cyan';
+  } else if (h >= 195 && h < 255) {
+    colorName = 'blue';
+  } else if (h >= 255 && h < 285) {
+    colorName = 'purple';
+  } else if (h >= 285 && h < 315) {
+    colorName = 'magenta';
+  } else if (h >= 315 && h < 345) {
+    colorName = 'pink';
+  }
+
+  // Add lightness modifier for better naming
+  if (l < 30) {
+    return `${colorName}-900`;
+  } else if (l < 45) {
+    return `${colorName}-700`;
+  } else if (l < 60) {
+    return `${colorName}-500`;
+  } else if (l < 75) {
+    return `${colorName}-300`;
+  } else if (l < 90) {
+    return `${colorName}-100`;
+  } else {
+    return `${colorName}-50`;
+  }
+}
+
+/**
  * Detect color role from color name/value patterns
  */
 function detectColorRole(
@@ -103,14 +205,20 @@ function normalizeColors(
 
   // Apply role detection and mapping
   for (const [name, scale] of Object.entries(scales)) {
-    const role = detectColorRole(name, Object.values(scale)[0] || '');
+    const firstValue = Object.values(scale)[0] || '';
+    const role = detectColorRole(name, firstValue);
 
     // Apply rename mapping if configured
-    const mappedName = mapping.color.rename[name] || name;
+    let mappedName = mapping.color.rename[name] || name;
 
     if (role) {
+      // Use detected role (primary, error, etc.)
       normalized[role] = scale;
     } else {
+      // Generate semantic name if current name is RGB value
+      if (name.startsWith('rgb(') || /^#[0-9a-f]{6}$/i.test(name)) {
+        mappedName = generateSemanticColorName(firstValue);
+      }
       normalized[mappedName] = scale;
     }
   }

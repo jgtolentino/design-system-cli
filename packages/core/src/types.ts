@@ -83,6 +83,7 @@ export interface RawDesignTokens {
   components: {
     [componentName: string]: ComponentPattern[];
   };
+  assets?: Asset[];
 }
 
 export interface ComponentPattern {
@@ -95,6 +96,26 @@ export interface ComponentPattern {
     active?: Record<string, string>;
     disabled?: Record<string, string>;
   };
+}
+
+export interface Asset {
+  id: string;
+  type: 'image' | 'video' | 'icon' | 'logo' | 'illustration' | 'animation';
+  role?: 'hero' | 'thumbnail' | 'avatar' | 'background' | 'decoration' | 'content';
+  src: string;
+  alt?: string;
+  aspectRatio?: string;
+  dominantColors?: string[];
+  dimensions?: {
+    width: number;
+    height: number;
+  };
+}
+
+export interface AssetContext {
+  page: string;
+  capturedAt: string;
+  assets: Asset[];
 }
 
 export interface NormalizedDesignTokens {
@@ -178,6 +199,7 @@ export interface CodegenOutput {
 export interface ExtractOptions {
   url: string;
   out: string;
+  assetsOut?: string;
   screenshots?: string;
   maxDepth?: number;
   viewport?: string;

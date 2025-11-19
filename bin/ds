@@ -22,6 +22,7 @@ program
   .description('Extract design tokens from a website using Playwright')
   .requiredOption('-u, --url <url>', 'URL to extract from')
   .option('-o, --out <path>', 'Output JSON file path', './tokens-raw.json')
+  .option('--assets-out <path>', 'Assets context output path (optional)')
   .option('-s, --screenshots <dir>', 'Directory to save screenshots')
   .option('--viewport <viewport>', 'Viewport size (e.g., "1440x900")', '1440x900')
   .option('--no-headless', 'Run browser in visible mode')
@@ -31,6 +32,7 @@ program
       await extract({
         url: options.url,
         out: options.out,
+        assetsOut: options.assetsOut,
         screenshots: options.screenshots,
         viewport: options.viewport,
         headless: options.headless,
@@ -109,6 +111,7 @@ program
   .requiredOption('-u, --url <url>', 'URL to extract from')
   .option('--raw-out <path>', 'Raw tokens output path', './tokens-raw.json')
   .option('--normalized-out <path>', 'Normalized tokens output path', './tokens-normalized.json')
+  .option('--assets-out <path>', 'Assets context output path', './assets.json')
   .option('--map <path>', 'Token mapping configuration file', './token-mapping.json')
   .option('--figma-out <path>', 'Figma plugin output directory', './figma-plugin')
   .option('--code-out <path>', 'Code generation output directory', './design-system')
@@ -121,6 +124,7 @@ program
       await extract({
         url: options.url,
         out: options.rawOut,
+        assetsOut: options.assetsOut,
         headless: true,
       });
 

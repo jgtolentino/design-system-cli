@@ -1,7 +1,7 @@
 import { chromium, Page } from 'playwright';
 import fs from 'fs/promises';
 import path from 'path';
-import type { ExtractOptions, RawDesignTokens, ComponentPattern, FrameworkDetection } from '@ds-cli/core';
+import type { ExtractOptions, RawDesignTokens, ComponentPattern, FrameworkDetection, Asset, AssetContext } from '@ds-cli/core';
 import { detectFramework } from '@ds-cli/core';
 
 /**
@@ -265,6 +265,133 @@ async function detectPageFramework(page: Page): Promise<FrameworkDetection> {
 }
 
 /**
+ * Extract assets (images, videos, icons, etc.)
+ */
+async function extractAssets(page: Page): Promise<Asset[]> {
+  return page.evaluate(() => {
+    const assets: Asset[] = [];
+    let idCounter = 1;
+
+    // Helper to determine asset role
+    const determineRole = (el: Element): Asset['role'] | undefined => {
+      const className = el.className.toLowerCase();
+      const parent = el.parentElement;
+      const parentClass = parent?.className?.toLowerCase() || '';
+
+      if (className.includes('hero') || parentClass.includes('hero')) return 'hero';
+      if (className.includes('avatar') || parentClass.includes('avatar')) return 'avatar';
+      if (className.includes('thumb') || parentClass.includes('thumb')) return 'thumbnail';
+      if (className.includes('background') || parentClass.includes('background')) return 'background';
+      if (className.includes('icon') || el.tagName === 'svg') return 'decoration';
+      return 'content';
+    };
+
+    // Helper to calculate aspect ratio
+    const getAspectRatio = (width: number, height: number): string => {
+      if (!width || !height) return '';
+      const gcd = (a: number, b: number): number => b === 0 ? a : gcd(b, a % b);
+      const divisor = gcd(width, height);
+      return `${width / divisor}:${height / divisor}`;
+    };
+
+    // Helper to extract dominant colors (simplified - samples center pixel)
+    const getDominantColor = (el: HTMLElement): string[] => {
+      const style = window.getComputedStyle(el);
+      const bgColor = style.backgroundColor;
+      if (bgColor && bgColor !== 'rgba(0, 0, 0, 0)' && bgColor !== 'transparent') {
+        return [bgColor];
+      }
+      return [];
+    };
+
+    // Extract images
+    const images = document.querySelectorAll('img');
+    images.forEach(img => {
+      const src = img.src || img.getAttribute('data-src');
+      if (src && !src.startsWith('data:')) {
+        const width = img.naturalWidth || img.width;
+        const height = img.naturalHeight || img.height;
+
+        assets.push({
+          id: `img-${idCounter++}`,
+          type: 'image',
+          role: determineRole(img),
+          src,
+          alt: img.alt || undefined,
+          aspectRatio: getAspectRatio(width, height),
+          dominantColors: getDominantColor(img as HTMLElement),
+          dimensions: width && height ? { width, height } : undefined,
+        });
+      }
+    });
+
+    // Extract videos
+    const videos = document.querySelectorAll('video');
+    videos.forEach(video => {
+      const src = video.src || video.querySelector('source')?.src;
+      if (src) {
+        assets.push({
+          id: `video-${idCounter++}`,
+          type: 'video',
+          role: determineRole(video),
+          src,
+          aspectRatio: getAspectRatio(video.videoWidth, video.videoHeight),
+          dimensions: video.videoWidth && video.videoHeight
+            ? { width: video.videoWidth, height: video.videoHeight }
+            : undefined,
+        });
+      }
+    });
+
+    // Extract SVG icons/illustrations
+    const svgs = document.querySelectorAll('svg');
+    svgs.forEach(svg => {
+      const viewBox = svg.getAttribute('viewBox');
+      const isIcon = svg.classList.contains('icon') ||
+                     svg.parentElement?.classList.contains('icon') ||
+                     (svg.clientWidth < 100 && svg.clientHeight < 100);
+
+      // Only include if it has meaningful content (not just decorative)
+      if (svg.querySelector('path, circle, rect, polygon')) {
+        const width = svg.clientWidth || 24;
+        const height = svg.clientHeight || 24;
+
+        assets.push({
+          id: `svg-${idCounter++}`,
+          type: isIcon ? 'icon' : 'illustration',
+          role: determineRole(svg),
+          src: svg.outerHTML.substring(0, 500), // Truncate for inline SVG
+          aspectRatio: getAspectRatio(width, height),
+          dimensions: { width, height },
+        });
+      }
+    });
+
+    // Extract background images
+    const allElements = document.querySelectorAll('*');
+    allElements.forEach(el => {
+      const style = window.getComputedStyle(el);
+      const bgImage = style.backgroundImage;
+
+      if (bgImage && bgImage !== 'none' && bgImage.startsWith('url(')) {
+        const url = bgImage.slice(5, -2); // Extract URL from url("...")
+        if (url && !url.startsWith('data:')) {
+          assets.push({
+            id: `bg-${idCounter++}`,
+            type: 'image',
+            role: 'background',
+            src: url,
+            dominantColors: getDominantColor(el as HTMLElement),
+          });
+        }
+      }
+    });
+
+    return assets;
+  });
+}
+
+/**
  * Main extraction function
  */
 export async function extract(options: ExtractOptions): Promise<void> {
@@ -317,6 +444,9 @@ export async function extract(options: ExtractOptions): Promise<void> {
     console.log('🧩 Extracting components...');
     const components = await extractComponents(page);
 
+    console.log('🖼️  Extracting assets...');
+    const assets = await extractAssets(page);
+
     console.log('🔍 Detecting framework...');
     const framework = await detectPageFramework(page);
 
@@ -350,12 +480,26 @@ export async function extract(options: ExtractOptions): Promise<void> {
         },
       },
       components,
+      assets,
     };
 
-    // Write output
-    console.log(`💾 Writing output to: ${options.out}`);
+    // Write tokens output
+    console.log(`💾 Writing tokens to: ${options.out}`);
     await fs.mkdir(path.dirname(options.out), { recursive: true });
     await fs.writeFile(options.out, JSON.stringify(result, null, 2));
+
+    // Write assets output if requested
+    if (options.assetsOut) {
+      const assetContext: AssetContext = {
+        page: options.url,
+        capturedAt: new Date().toISOString(),
+        assets,
+      };
+
+      console.log(`💾 Writing assets to: ${options.assetsOut}`);
+      await fs.mkdir(path.dirname(options.assetsOut), { recursive: true });
+      await fs.writeFile(options.assetsOut, JSON.stringify(assetContext, null, 2));
+    }
 
     console.log('✅ Extraction complete!');
     console.log(`\n📊 Summary:`);
@@ -367,6 +511,7 @@ export async function extract(options: ExtractOptions): Promise<void> {
     console.log(`   Shadows: ${shadows.length} values`);
     console.log(`   Breakpoints: ${Object.keys(breakpoints).length}`);
     console.log(`   Components: ${Object.keys(components).length} types`);
+    console.log(`   Assets: ${assets.length} (images, videos, icons)`);
     console.log(`   Framework: ${framework.primary} (${Math.round(framework.confidence * 100)}% confidence)`);
 
   } finally {

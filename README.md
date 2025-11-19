@@ -1,5 +1,7 @@
 # Design System CLI (`ds`)
 
+> **Current validated version:** v0.1.0 (Google AI Futures Fund example)
+
 A powerful CLI tool for extracting, normalizing, and generating code from design systems.
 
 ## Features

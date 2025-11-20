@@ -1,0 +1,29 @@
+{
+  "name": "@ds-cli/functional-codegen",
+  "version": "1.0.0",
+  "description": "Functional application scaffold generation",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "codegen",
+    "scaffold",
+    "nextjs",
+    "functional",
+    "application"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ds-cli/functional-flows": "workspace:*",
+    "@ds-cli/functional-entities": "workspace:*",
+    "@ds-cli/functional-rules": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

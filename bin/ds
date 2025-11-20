@@ -5,10 +5,17 @@ const chalk = require('chalk');
 const path = require('path');
 
 // Import from built packages
-const { extract } = require(path.join(__dirname, '../packages/extractor/dist'));
+const { extract, extractHtmlCommand, hardFork, TOKEN_SHIFT_PRESETS } = require(path.join(__dirname, '../packages/extractor/dist'));
 const { normalize } = require(path.join(__dirname, '../packages/normalizer/dist'));
 const { figma } = require(path.join(__dirname, '../packages/figma-bridge/dist'));
 const { codegen, generateAssetPrompts } = require(path.join(__dirname, '../packages/codegen/dist'));
+
+// Functional pipeline imports (Phases 9-12)
+const { trace } = require(path.join(__dirname, '../packages/functional-trace/dist'));
+const { flows } = require(path.join(__dirname, '../packages/functional-flows/dist'));
+const { entities } = require(path.join(__dirname, '../packages/functional-entities/dist'));
+const { extractRules } = require(path.join(__dirname, '../packages/functional-rules/dist'));
+const { generateCode } = require(path.join(__dirname, '../packages/functional-codegen/dist'));
 
 const program = new Command();
 
@@ -121,6 +128,80 @@ program
   });
 
 program
+  .command('extract-html')
+  .description('Extract complete HTML structure and generate React components')
+  .requiredOption('-u, --url <url>', 'URL to extract from')
+  .option('-o, --out <path>', 'Output directory', './html-extracted')
+  .option('--no-assets', 'Skip downloading assets')
+  .option('--no-components', 'Skip generating components')
+  .action(async (options) => {
+    try {
+      await extractHtmlCommand({
+        url: options.url,
+        out: options.out,
+        downloadAssets: options.assets,
+        generateComponents: options.components
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ HTML extraction failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('hard-fork')
+  .description('Transform extracted site into legally clean, brand-neutral template')
+  .requiredOption('-s, --source <dir>', 'Source directory (from extract-html)')
+  .option('-o, --out <dir>', 'Output directory (default: source-fork)')
+  .option('--brand-names <names>', 'Comma-separated brand names to remove')
+  .option('--company-name <name>', 'Replacement company name', 'InsightPulse')
+  .option('--product-name <name>', 'Replacement product name', 'Product Name')
+  .option('--preset <preset>', 'Token shift preset: subtle, moderate, dramatic, insightpulse', 'moderate')
+  .option('--hue-shift <degrees>', 'Custom hue shift in degrees (-180 to 180)')
+  .option('--saturation <multiplier>', 'Custom saturation multiplier (0.5 to 2.0)')
+  .option('--skip-brands', 'Skip brand name stripping')
+  .option('--skip-tokens', 'Skip token shifting')
+  .option('--skip-rename', 'Skip component renaming')
+  .option('--tokens-path <path>', 'Path to tokens file (if not auto-detected)')
+  .action(async (options) => {
+    try {
+      const brandNames = options.brandNames ? options.brandNames.split(',').map(n => n.trim()) : undefined;
+
+      let tokenConfig = TOKEN_SHIFT_PRESETS[options.preset] || TOKEN_SHIFT_PRESETS.moderate;
+
+      // Custom overrides
+      if (options.hueShift || options.saturation) {
+        tokenConfig = {
+          ...tokenConfig,
+          colorShift: {
+            hueShift: options.hueShift ? parseInt(options.hueShift) : tokenConfig.colorShift?.hueShift,
+            saturationMultiplier: options.saturation ? parseFloat(options.saturation) : tokenConfig.colorShift?.saturationMultiplier
+          }
+        };
+      }
+
+      await hardFork({
+        sourceDir: options.source,
+        outputDir: options.out,
+        brandConfig: {
+          brandNames,
+          companyName: options.companyName,
+          productName: options.productName
+        },
+        tokenConfig,
+        skipBrandStripping: options.skipBrands,
+        skipTokenShifting: options.skipTokens,
+        skipComponentRenaming: options.skipRename,
+        tokensPath: options.tokensPath
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Hard fork failed:'), error.message);
+      console.error(error.stack);
+      process.exit(1);
+    }
+  });
+
+program
   .command('pipeline')
   .description('Run the full extraction → normalization → figma → codegen pipeline')
   .requiredOption('-u, --url <url>', 'URL to extract from')
@@ -173,6 +254,120 @@ program
     } catch (error) {
       console.error(chalk.red('\n❌ Pipeline failed:'), error.message);
       console.error(error.stack);
+      process.exit(1);
+    }
+  });
+
+// Functional pipeline commands (Phases 9-11)
+program
+  .command('trace')
+  .description('Record user interactions and network calls (Phase 9)')
+  .requiredOption('-u, --url <url>', 'URL to trace')
+  .option('-o, --out <path>', 'Output trace file', './trace.json')
+  .option('--duration <ms>', 'Recording duration in milliseconds', '30000')
+  .option('--viewport <size>', 'Viewport size (e.g., "1440x900")', '1440x900')
+  .action(async (options) => {
+    try {
+      const [width, height] = options.viewport.split('x').map(Number);
+
+      await trace({
+        url: options.url,
+        out: options.out,
+        duration: parseInt(options.duration),
+        viewport: [width, height]
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Trace recording failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('flows')
+  .description('Extract screens and flows from trace (Phase 10)')
+  .requiredOption('--trace <path>', 'Input trace file')
+  .option('--out-screens <path>', 'Output screens file', './screens.json')
+  .option('--out-flows <path>', 'Output flows file', './flows.json')
+  .option('--min-steps <number>', 'Minimum steps for flow detection', '2')
+  .action(async (options) => {
+    try {
+      await flows({
+        tracePath: options.trace,
+        outScreens: options.outScreens,
+        outFlows: options.outFlows,
+        minStepsForFlow: parseInt(options.minSteps)
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Flow extraction failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('entities')
+  .description('Extract entities and data models from trace (Phase 11)')
+  .requiredOption('--trace <path>', 'Input trace file')
+  .option('-o, --out <path>', 'Output entities file', './entities.json')
+  .option('--no-metadata', 'Exclude metadata from output')
+  .action(async (options) => {
+    try {
+      await entities({
+        tracePath: options.trace,
+        out: options.out,
+        includeMetadata: options.metadata
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Entity extraction failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('rules')
+  .description('Extract business rules and state machines (Phase 12)')
+  .requiredOption('--trace <path>', 'Input trace file')
+  .requiredOption('--flows <path>', 'Input flows file')
+  .requiredOption('--entities <path>', 'Input entities file')
+  .option('-o, --out <path>', 'Output rules file', './rules.json')
+  .option('--llm-profile <profile>', 'LLM profile for enhancement (optional)')
+  .option('--no-metadata', 'Exclude metadata from output')
+  .action(async (options) => {
+    try {
+      await extractRules({
+        tracePath: options.trace,
+        flowsPath: options.flows,
+        entitiesPath: options.entities,
+        out: options.out,
+        llmProfile: options.llmProfile,
+        includeMetadata: options.metadata
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Rules extraction failed:'), error.message);
+      process.exit(1);
+    }
+  });
+
+program
+  .command('fx-codegen')
+  .description('Generate functional application scaffold (Phase 12)')
+  .requiredOption('--screens <path>', 'Input screens file')
+  .requiredOption('--flows <path>', 'Input flows file')
+  .requiredOption('--entities <path>', 'Input entities file')
+  .requiredOption('--rules <path>', 'Input rules file')
+  .option('--framework <framework>', 'Target framework', 'nextjs')
+  .option('-o, --out <path>', 'Output directory', './apps/functional-app')
+  .action(async (options) => {
+    try {
+      await generateCode({
+        screensPath: options.screens,
+        flowsPath: options.flows,
+        entitiesPath: options.entities,
+        rulesPath: options.rules,
+        framework: options.framework,
+        out: options.out
+      });
+    } catch (error) {
+      console.error(chalk.red('❌ Code generation failed:'), error.message);
       process.exit(1);
     }
   });

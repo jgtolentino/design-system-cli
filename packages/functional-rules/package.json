@@ -1,0 +1,29 @@
+{
+  "name": "@ds-cli/functional-rules",
+  "version": "1.0.0",
+  "description": "Business rules, state machines, and validation extraction",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "rules",
+    "state-machines",
+    "validation",
+    "permissions",
+    "business-logic"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ds-cli/functional-trace": "workspace:*",
+    "@ds-cli/functional-flows": "workspace:*",
+    "@ds-cli/functional-entities": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

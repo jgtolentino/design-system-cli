@@ -1,0 +1,26 @@
+{
+  "name": "@ds-cli/functional-flows",
+  "version": "1.0.0",
+  "description": "Flow and screen extraction from interaction traces",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "flows",
+    "screens",
+    "user-journeys",
+    "behavioral-analysis"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ds-cli/functional-trace": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

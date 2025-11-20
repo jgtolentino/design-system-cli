@@ -1,0 +1,26 @@
+{
+  "name": "@ds-cli/functional-trace",
+  "version": "1.0.0",
+  "description": "Functional trace recorder for behavioral analysis",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "trace",
+    "interaction",
+    "playwright",
+    "behavioral-analysis"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.40.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

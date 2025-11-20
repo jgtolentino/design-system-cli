@@ -1,0 +1,26 @@
+{
+  "name": "@ds-cli/functional-entities",
+  "version": "1.0.0",
+  "description": "Entity and data model inference from network traces",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch"
+  },
+  "keywords": [
+    "entities",
+    "data-model",
+    "crud",
+    "api-inference"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@ds-cli/functional-trace": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3"
+  }
+}

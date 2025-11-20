@@ -272,17 +272,26 @@ async function extractAssets(page: Page): Promise<Asset[]> {
     const assets: Asset[] = [];
     let idCounter = 1;
 
+    // Helper to safely get className as string (handles SVGAnimatedString)
+    const getClassName = (el: Element | null): string => {
+      if (!el) return '';
+      const cn = el.className;
+      if (typeof cn === 'string') return cn;
+      if (cn && typeof cn === 'object' && 'baseVal' in cn) return (cn as any).baseVal;
+      return '';
+    };
+
     // Helper to determine asset role
     const determineRole = (el: Element): Asset['role'] | undefined => {
-      const className = el.className.toLowerCase();
+      const className = getClassName(el).toLowerCase();
       const parent = el.parentElement;
-      const parentClass = parent?.className?.toLowerCase() || '';
+      const parentClass = getClassName(parent).toLowerCase();
 
       if (className.includes('hero') || parentClass.includes('hero')) return 'hero';
       if (className.includes('avatar') || parentClass.includes('avatar')) return 'avatar';
       if (className.includes('thumb') || parentClass.includes('thumb')) return 'thumbnail';
       if (className.includes('background') || parentClass.includes('background')) return 'background';
-      if (className.includes('icon') || el.tagName === 'svg') return 'decoration';
+      if (className.includes('icon') || el.tagName === 'SVG') return 'decoration';
       return 'content';
     };
 
@@ -412,7 +421,7 @@ export async function extract(options: ExtractOptions): Promise<void> {
 
   try {
     console.log('📡 Loading page...');
-    await page.goto(options.url, { waitUntil: 'networkidle', timeout: options.timeout || 60000 });
+    await page.goto(options.url, { waitUntil: 'domcontentloaded', timeout: options.timeout || 60000 });
 
     // Scroll to bottom to trigger lazy-loaded content
     await page.evaluate(() => {

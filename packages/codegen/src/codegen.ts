@@ -13,6 +13,17 @@ interface CodegenOptions {
 }
 
 /**
+ * Helper to safely format object keys - only remove quotes from valid JS identifiers
+ */
+function formatObjectKeys(obj: any): string {
+  const json = JSON.stringify(obj, null, 6);
+  // Only remove quotes from keys that are valid JavaScript identifiers
+  // Valid: letters, digits, underscore, dollar sign (but not starting with digit)
+  // Invalid: contains hyphen, dot, space, or starts with digit
+  return json.replace(/"([a-zA-Z_$][a-zA-Z0-9_$]*)":/g, '$1:');
+}
+
+/**
  * Generate Tailwind config from tokens
  */
 function generateTailwindConfig(tokens: NormalizedDesignTokens): string {
@@ -26,15 +37,15 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: ${JSON.stringify(tokens.colors, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      fontFamily: ${JSON.stringify(tokens.typography.fontFamily, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      fontSize: ${JSON.stringify(tokens.typography.fontSize, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      fontWeight: ${JSON.stringify(tokens.typography.fontWeight, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      lineHeight: ${JSON.stringify(tokens.typography.lineHeight, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      spacing: ${JSON.stringify(tokens.spacing, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      borderRadius: ${JSON.stringify(tokens.borderRadius, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      boxShadow: ${JSON.stringify(tokens.boxShadow, null, 6).replace(/"([^"]+)":/g, '$1:')},
-      screens: ${JSON.stringify(tokens.screens, null, 6).replace(/"([^"]+)":/g, '$1:')},
+      colors: ${formatObjectKeys(tokens.colors)},
+      fontFamily: ${formatObjectKeys(tokens.typography.fontFamily)},
+      fontSize: ${formatObjectKeys(tokens.typography.fontSize)},
+      fontWeight: ${formatObjectKeys(tokens.typography.fontWeight)},
+      lineHeight: ${formatObjectKeys(tokens.typography.lineHeight)},
+      spacing: ${formatObjectKeys(tokens.spacing)},
+      borderRadius: ${formatObjectKeys(tokens.borderRadius)},
+      boxShadow: ${formatObjectKeys(tokens.boxShadow)},
+      screens: ${formatObjectKeys(tokens.screens)},
     },
   },
   plugins: [],

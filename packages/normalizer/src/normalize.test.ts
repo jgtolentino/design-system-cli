@@ -66,10 +66,10 @@ test('normalizeColors: creates color scales with DEFAULT', () => {
 
   // Each color should be a scale with DEFAULT value
   assert.strictEqual(typeof normalized.black, 'object');
-  assert.ok(normalized.black.DEFAULT, 'Black should have DEFAULT value');
+  assert.ok(normalized.black?.DEFAULT, 'Black should have DEFAULT value');
 
   assert.strictEqual(typeof normalized.white, 'object');
-  assert.ok(normalized.white.DEFAULT, 'White should have DEFAULT value');
+  assert.ok(normalized.white?.DEFAULT, 'White should have DEFAULT value');
 });
 
 test('normalizeColors: handles achromatic colors correctly', () => {

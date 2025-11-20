@@ -21,6 +21,15 @@ importers:
       eslint:
         specifier: ^8.56.0
         version: 8.57.1
+      pixelmatch:
+        specifier: 7.1.0
+        version: 7.1.0
+      playwright:
+        specifier: ^1.56.1
+        version: 1.56.1
+      pngjs:
+        specifier: 7.0.0
+        version: 7.0.0
       prettier:
         specifier: ^3.1.0
         version: 3.6.2
@@ -93,6 +102,83 @@ importers:
         version: 20.19.25
       typescript:
         specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/functional-codegen:
+    dependencies:
+      '@ds-cli/functional-entities':
+        specifier: workspace:*
+        version: link:../functional-entities
+      '@ds-cli/functional-flows':
+        specifier: workspace:*
+        version: link:../functional-flows
+      '@ds-cli/functional-rules':
+        specifier: workspace:*
+        version: link:../functional-rules
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/functional-entities:
+    dependencies:
+      '@ds-cli/functional-trace':
+        specifier: workspace:*
+        version: link:../functional-trace
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/functional-flows:
+    dependencies:
+      '@ds-cli/functional-trace':
+        specifier: workspace:*
+        version: link:../functional-trace
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/functional-rules:
+    dependencies:
+      '@ds-cli/functional-entities':
+        specifier: workspace:*
+        version: link:../functional-entities
+      '@ds-cli/functional-flows':
+        specifier: workspace:*
+        version: link:../functional-flows
+      '@ds-cli/functional-trace':
+        specifier: workspace:*
+        version: link:../functional-trace
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      typescript:
+        specifier: ^5.3.3
+        version: 5.9.3
+
+  packages/functional-trace:
+    dependencies:
+      playwright:
+        specifier: ^1.40.0
+        version: 1.56.1
+    devDependencies:
+      '@types/node':
+        specifier: ^20.10.0
+        version: 20.19.25
+      typescript:
+        specifier: ^5.3.3
         version: 5.9.3
 
   packages/normalizer:
@@ -686,6 +772,10 @@ packages:
     resolution: {integrity: sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==}
     engines: {node: '>=8'}
 
+  pixelmatch@7.1.0:
+    resolution: {integrity: sha512-1wrVzJ2STrpmONHKBy228LM1b84msXDUoAzVEl0R8Mz4Ce6EPr+IVtxm8+yvrqLYMHswREkjYFaMxnyGnaY3Ng==}
+    hasBin: true
+
   playwright-core@1.56.1:
     resolution: {integrity: sha512-hutraynyn31F+Bifme+Ps9Vq59hKuUCz7H1kDOcBs+2oGguKkWTU50bBWrtz34OUWmIwpBTWDxaRPXrIXkgvmQ==}
     engines: {node: '>=18'}
@@ -695,6 +785,10 @@ packages:
     resolution: {integrity: sha512-aFi5B0WovBHTEvpM3DzXTUaeN6eN0qWnTkKx4NQaH4Wvcmc153PdaY2UBdSYKaGYw+UyWXSVyxDUg5DoPEttjw==}
     engines: {node: '>=18'}
     hasBin: true
+
+  pngjs@7.0.0:
+    resolution: {integrity: sha512-LKWqWJRhstyYo9pGvgor/ivk2w94eSjE3RGVuzLGlr3NmD8bf7RcYGze1mNdEHRP6TRP6rMuDHk5t44hnTRyow==}
+    engines: {node: '>=14.19.0'}
 
   prelude-ls@1.2.1:
     resolution: {integrity: sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g==}
@@ -1335,6 +1429,10 @@ snapshots:
 
   path-key@3.1.1: {}
 
+  pixelmatch@7.1.0:
+    dependencies:
+      pngjs: 7.0.0
+
   playwright-core@1.56.1: {}
 
   playwright@1.56.1:
@@ -1342,6 +1440,8 @@ snapshots:
       playwright-core: 1.56.1
     optionalDependencies:
       fsevents: 2.3.2
+
+  pngjs@7.0.0: {}
 
   prelude-ls@1.2.1: {}
 

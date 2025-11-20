@@ -41,5 +41,19 @@ figma-plugin/
 design-system/
 screenshots/
 
+# Extraction outputs
+out/
+html-extracted*/
+assets.json
+*-assets.json
+*-prompts.json
+asset-prompts.json
+comparison-results/
+snapshots/
+original-page.html
+
+# Functional clone outputs
+todomvc-*.json
+
 # OS
 Thumbs.db

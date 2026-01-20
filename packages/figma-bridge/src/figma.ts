@@ -6,6 +6,7 @@ import type {
   FigmaPluginOutput,
   FigmaOptions,
 } from '@ds-cli/core';
+import { runGitWorkflow } from './git-operations';
 
 /**
  * Generate Figma plugin manifest
@@ -378,6 +379,17 @@ async function pushToFigma(
  */
 export async function figma(options: FigmaOptions): Promise<void> {
   console.log(`🎨 Starting Figma integration: ${options.mode} mode`);
+
+  // Run git pre-flight checks
+  const gitResult = await runGitWorkflow(process.cwd(), {
+    checkStatus: true,
+    pull: true,
+    requireClean: false
+  });
+
+  if (!gitResult.proceed) {
+    throw new Error(`Git pre-flight checks failed: ${gitResult.message}`);
+  }
 
   // Read normalized tokens
   const tokensData = await fs.readFile(options.input, 'utf-8');
